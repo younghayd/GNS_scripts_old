@@ -4,12 +4,16 @@ require(readxl)
 require(lubridate)
 require(dplyr)
 require(ggplot2)
+require(ggiraph)
 require(bfsl)
 require(grob)
 require(plotly)
 
+raw_data_directory <- "H:/data/LA_covid_project/raw_data/flask_data/"
+figures_directory <- "H:/figures/LA_covid_project/"
 
-setwd("H:/LA_flask_observations/Final_outputs/data/Baltimore_flask_data/")
+
+setwd(raw_data_directory)
 
 
 #Organising Data 
@@ -84,12 +88,12 @@ gradient_function <- function(df,xdata,ydata,title,xlabel,ylabel,xerror = NULL, 
   
   grob_text2 <- bquote(r^2* '='*.(text_rsq))
   
-  
-  eq_label <- grobTree(textGrob(grob_text,
-                                x=0.05,  y=0.92, hjust=0,gp=gpar(fontsize=11)))
-  eq_label2 <- grobTree(textGrob(grob_text2,
-                                 x=0.05,  y=0.84 + 0.015, hjust=0,gp=gpar(fontsize=11)))
-  
+  #
+  # eq_label <- grobTree(textGrob(grob_text,
+  #                               x=0.05,  y=0.92, hjust=0,gp=gpar(fontsize=11)))
+  # eq_label2 <- grobTree(textGrob(grob_text2,
+  #                                x=0.05,  y=0.84 + 0.015, hjust=0,gp=gpar(fontsize=11)))
+  #
   plot <- ggplot(data = flask_data, aes(x = CO2ff, y = COxs)) + theme_linedraw()+
     geom_point_interactive(aes(x =CO2ff, y = COxs, color = site), tooltip = tooltipinfo) + 
     labs(title = "Baltimore Flask Data", x = "CO2ff (ppm)", y = "COxs (ppb)")
@@ -99,8 +103,8 @@ gradient_function <- function(df,xdata,ydata,title,xlabel,ylabel,xerror = NULL, 
   
   
   
-  plot <- plot + geom_abline(slope = bfsl_fit$coefficients[2], intercept = bfsl_fit$coefficients[1]) +
-    annotation_custom(eq_label) + annotation_custom(eq_label2)
+  plot <- plot + geom_abline(slope = bfsl_fit$coefficients[2], intercept = bfsl_fit$coefficients[1])# +
+    #annotation_custom(eq_label) + annotation_custom(eq_label2)
   
   
   print(girafe(code=print(plot),height_svg=4, width_svg = 7))
