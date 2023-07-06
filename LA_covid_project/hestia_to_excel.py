@@ -1,6 +1,7 @@
-# This script converts the hourly .nc.tar.gz files into usable sector totals and outputs it in Excel
+#-- This script converts the hourly .nc.tar.gz files into usable sector totals and outputs it in Excel
 
-# Load packages
+#-- Load packages
+
 import os
 import tarfile
 import netCDF4
@@ -10,15 +11,107 @@ from datetime import datetime, timedelta
 import openpyxl
 
 
-# Set working directories
+#-- Set working directories and variables
+
+city = "baltimore"
+
+year_list =  ["2010", "2011", "2012", "2013", "2014", "2015"]
+sector_list = ["Onroad", "Nonroad", "Residential", "Commercial", "Industrial", "Airport", "Rail", "ElecProd", "CMV",
+               "Cement"]
 
 raw_file_path = "H:/data/LA_covid_project/raw_data/inventory_CO2_data/baltimore/hestia_nc_files/hourly/zipped/"
 nc_file_path = "H:/data/LA_covid_project/raw_data/inventory_CO2_data/baltimore/hestia_nc_files/hourly/nc/"
 processed_data_path = "H:/data/LA_covid_project/processed_data/baltimore/"
 
-city = "baltimore"
+def tar_gz_unzip(raw_data_loc, proc_data_loc):
+    """
+    tar_gz_unzip takes raw .tar.gz files from Hestia and unzips them.
+    Since the hourly files are so large, this can take a while.
+    Raw files are downloaded from https://hestia.rc.nau.edu/Data.html.
+    Username and password are "hestiauser" and "hestia2019"
 
-# Load in files
+    :param raw_data_loc: Folder location of all raw .tar.gz files
+    :param proc_data_loc: Folder location where all annual .nc files for each sector will be saved (at hourly res)
+    """
+    tar_gz_list = os.listdir(raw_data_loc)
+
+    for tar_gz_filename in tar_gz_list:
+        file = tarfile.open(tar_gz_filename)
+        file.extractall(proc_data_loc)
+        file.close()
+
+def daterange(start_date, end_date):
+    """
+    daterange returns a range that beings at start_date, ends at end_date, and iterates in hour steps.
+    yield is used in the place of "return" to conserve memory.
+    This is used to create a datetime data frame for the observed year, in steps of 1 hour.
+
+    :param start_date: datetime that data frame begins
+    :param end_date: datetime that data frame ends
+    :return:
+    """
+
+    delta = timedelta(hours=1)
+    while start_date < end_date:
+        yield start_date
+        start_date += delta
+
+def calculate_co2_totals(nc_file, hour_start, hour_end):
+    """
+
+    calculate_co2_totals takes in the 4-D data (lat, lon, time, and kgC) for a given year. It calculates the total kgC
+    measured during a certain time range (likely between 1 pm (13) and 4 pm (16)). This is for better comparison
+    between inventory and flasks measured during mid afternoon. While CO data won't be measured by hour, can use
+    sector totals to see which sectors are more dominant at this time and can infer whether this would increase
+    the RCO of the inventory data when comparing to flasks.
+
+    :param nc_file: .nc file, specific for a year and sector.
+    :param hour_start: beginning hour of data range
+    :param hour_end: end hour of data range
+    :return:
+    """
+
+    start_date = datetime(int(year), 1, 1, 0, 00)
+    end_date = datetime(int(year) + 1, 1, 1, 0, 00)
+
+    date_array = pd.DataFrame(columns = ['datetime'])
+
+    #Creating a datetime dataframe for the year, in steps of 1 hour
+    for single_date in daterange(start_date, end_date):
+        day_array = pd.DataFrame(data=[single_date.strftime("%Y-%m-%d %H:%M")], columns=["datetime"])
+        date_array = pd.concat([date_array, day_array])
+
+    date_array['datetime'] = pd.to_datetime(date_array['datetime'])
+
+    #Selecting datetimes in date_array that correspond to flask times (mid afternoon).
+        #+1 on hour_start accounts for fact that hour 13 corresponds to the period of 12 pm to 1 pm, not 1 pm to 2 pm.
+    selected_values = date_array[
+        (date_array['datetime'].dt.hour >= hour_start + 1) & (date_array['datetime'].dt.hour <= hour_end)
+        ]
+
+    #Converting selected datetimes to hours of year to match with Hestia
+
+    selected_values['year'] = selected_values['datetime'].dt.year
+    selected_values['start_of_year'] = pd.to_datetime(selected_values['year'], format='%Y')
+
+    # Calculate the time difference in hours
+    selected_values['hours_of_year'] = (selected_values['datetime'] - selected_values['start_of_year']).dt.total_seconds() / 3600
+
+    selected_hours = selected_values['hours_of_year'].tolist()
+    selected_hours = [int(i) for i in selected_hours]
+    selected_hours = [i -1 for i in selected_hours]
+
+    time_series = nc_file.sum(dim=["X", "Y"])
+    time_series = time_series.to_dataframe()
+
+    selected_times = time_series.iloc[selected_hours]
+
+    co2_3_hour = selected_times.sum().item()
+
+
+
+
+#-- Load in files
 os.chdir(raw_file_path)
 #
 # #Define functions
@@ -39,9 +132,6 @@ def daterange(start_date, end_date):
 # # Convert .nc map object to data frame for the chosen year
 os.chdir(nc_file_path)
 
-year_list =  ["2010", "2011", "2012", "2013", "2014", "2015"]
-sector_list = ["Onroad", "Nonroad", "Residential", "Commercial", "Industrial", "Airport", "Rail", "ElecProd", "CMV",
-               "Cement"]
 
 nc_list = os.listdir()
 # Since there are some annual files in there by mistake
