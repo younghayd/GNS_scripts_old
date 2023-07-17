@@ -1,7 +1,7 @@
 #Collection of functions used for plotting in Python
 
 
-def york_fit(xi, yi, dxi, dyi, ri=0.0, grad_0=1.0, maxIter=1e6):
+def fit(xi, yi, dxi, dyi, ri=0.0, grad_0=1.0, maxIter=1e6):
 
     """Make a linear bivariate fit to xi, yi data using York et al. (2004).
     This is an implementation of the line fitting algorithm presented in:
@@ -78,7 +78,7 @@ def york_fit(xi, yi, dxi, dyi, ri=0.0, grad_0=1.0, maxIter=1e6):
     int = y_bar - grad * x_bar
 
     # Goodness of fit
-    r = np.sum(Wi * (yi - grad*xi - int)**2.0)
+    r = np.sum(Wi * (yi - grad*xi - int)**2.0)/100
 
     # (8) For each point (xi, yi), calculate the adjusted values xi_adj
     xi_adj = x_bar + betai
@@ -94,10 +94,63 @@ def york_fit(xi, yi, dxi, dyi, ri=0.0, grad_0=1.0, maxIter=1e6):
 
 
     if iIter <= maxIter:
-        return {"grad" : grad, "grad_err" : grad_err, "int" : int, "int_err" : int_err, "r" : r}
+        return {"grad":grad, "grad_err":grad_err, "int":int, "int_err":int_err, "r":r}
     else:
         print("bivariate_fit.py exceeded maximum number of iterations, " +
               "maxIter = {:}".format(maxIter))
         return np.nan, np.nan, np.nan, np.nan
 
-def york_fit_plot(x, y, york_fit):
+def fit_plot(x, x_err, y, y_err, fit, location, save_path):
+    """
+
+    :param x:
+    :param y:
+    :param fit:
+    :param location:
+    :param x_lab:
+    :param y_lab:
+    :return:
+    """
+    import plotly.express as px
+    import plotly.graph_objects as go
+    import math
+    import plotly.io as pio
+    import kaleido
+
+    fig = px.scatter(x = x, y = y,
+                     error_x = x_err, error_y = y_err
+                     ).update_layout(yaxis_title="COxs (ppb)",
+                                     xaxis_title="CO<sub>2</sub>ff (ppm)",
+                                     title=location.capitalize() + " flasks")
+
+
+    fig.add_trace(
+        go.Scatter(x=x, y=fit["grad"]*x + fit["int"], name="York fit", line_shape="linear"))
+
+    fig.add_annotation(x=min(x) + 0.05*(max(x) - min(x)), y=1.1*max(y),
+                       text="y = " + str(round(fit["grad"], 1)) + "x + " + str(round(fit['int'], 1)),
+                       font=dict(size=30),
+                       showarrow=False)
+
+    fig.add_annotation(x=min(x) + 0.05*(max(x) - min(x)), y=1*max(y),
+                       text="r<sup>2</sup> = " + str(round(fit["r"], 1)),
+                       font=dict(size=30),
+                       showarrow=False)
+
+    fig.add_annotation(x=min(x) + 0.05*(max(x) - min(x)), y=.89*max(y),
+                       text="R<sub>CO</sub> = " + str(round(fit["grad"], 1)) + u" \u00B1 " +
+                            str(math.ceil(fit["grad_err"])),
+                       font=dict(size=30),
+                       showarrow=False)
+
+    fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True, zeroline = False)
+    fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True, zeroline = False)
+
+    fig.update_layout(showlegend=False)
+
+    fig.layout.template = "presentation"
+    fig.show()
+
+    pio.write_image(fig, save_path+location.lower()+"_flasks"+".png", scale=1, width=1600, height=1000)
+
+    fig.write_html(save_path+location.lower()+"_flasks"+".html")
