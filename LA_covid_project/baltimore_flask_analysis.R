@@ -99,7 +99,8 @@ gradient_function <- function(df,xdata,ydata,title,xlabel,ylabel,xerror = NULL, 
     labs(title = "Baltimore Flask Data", x = "CO2ff (ppm)", y = "COxs (ppb)")
     # geom_errorbar(aes(ymin = ymin, ymax = ymax), width = 0.2, alpha = 0.2) +
     # geom_errorbar(aes(xmin = xmin, xmax = xmax), width = 0.2, alpha = 0.2) +
-    
+
+  print(rsq)
   
   
   

@@ -1,7 +1,7 @@
 #Collection of functions used for plotting in Python
 
 
-def fit(xi, yi, dxi, dyi, ri=0.0, grad_0=1.0, maxIter=1e6):
+def york_fit(xi, yi, dxi, dyi, ri=0.0, grad_0=1.0, maxIter=1e6):
 
     """Make a linear bivariate fit to xi, yi data using York et al. (2004).
     This is an implementation of the line fitting algorithm presented in:
@@ -25,7 +25,7 @@ def fit(xi, yi, dxi, dyi, ri=0.0, grad_0=1.0, maxIter=1e6):
     Usage:
     [a, b] = bivariate_fit( xi, yi, dxi, dyi, ri, b0, maxIter)
 
-    From: mikkopitkanen/fit_bivariate.py
+    Adapted from: mikkopitkanen/fit_bivariate.py
     """
 
     import numpy as np
@@ -78,7 +78,14 @@ def fit(xi, yi, dxi, dyi, ri=0.0, grad_0=1.0, maxIter=1e6):
     int = y_bar - grad * x_bar
 
     # Goodness of fit
-    r = np.sum(Wi * (yi - grad*xi - int)**2.0)/100
+    bfsl_fit=xi * grad+int
+    r_numerator=sum((bfsl_fit-yi)**2)
+    ymean=np.mean(yi)
+    r_denominator=np.sum((yi - ymean)**2)
+    r=1 - r_numerator / r_denominator
+
+
+    # r = np.sum(Wi * (yi - grad*xi - int)**2.0)/100
 
     # (8) For each point (xi, yi), calculate the adjusted values xi_adj
     xi_adj = x_bar + betai
@@ -100,7 +107,7 @@ def fit(xi, yi, dxi, dyi, ri=0.0, grad_0=1.0, maxIter=1e6):
               "maxIter = {:}".format(maxIter))
         return np.nan, np.nan, np.nan, np.nan
 
-def fit_plot(x, x_err, y, y_err, fit, location, save_path):
+def fit_plot(df, x, x_err, y, y_err, fit, location, save_path):
     """
 
     :param x:
@@ -118,11 +125,18 @@ def fit_plot(x, x_err, y, y_err, fit, location, save_path):
     import kaleido
 
     fig = px.scatter(x = x, y = y,
-                     error_x = x_err, error_y = y_err
+                     error_x = x_err,
+                     error_y = y_err,
+                     color=df["site"]
                      ).update_layout(yaxis_title="COxs (ppb)",
                                      xaxis_title="CO<sub>2</sub>ff (ppm)",
                                      title=location.capitalize() + " flasks")
 
+    fig.update_traces(marker={'size': 15})
+
+    #fig.data[0].error_y.thickness = 0.9
+    #fig.data[1].error_y.thickness = 0.9
+    #fig.data[2].error_y.thickness = 0.9
 
     fig.add_trace(
         go.Scatter(x=x, y=fit["grad"]*x + fit["int"], name="York fit", line_shape="linear"))
@@ -133,7 +147,7 @@ def fit_plot(x, x_err, y, y_err, fit, location, save_path):
                        showarrow=False)
 
     fig.add_annotation(x=min(x) + 0.05*(max(x) - min(x)), y=1*max(y),
-                       text="r<sup>2</sup> = " + str(round(fit["r"], 1)),
+                       text="r<sup>2</sup> = " + str(round(fit["r"], 2)),
                        font=dict(size=30),
                        showarrow=False)
 
@@ -146,11 +160,17 @@ def fit_plot(x, x_err, y, y_err, fit, location, save_path):
     fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True, zeroline = False)
     fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True, zeroline = False)
 
-    fig.update_layout(showlegend=False)
+    fig.update_layout(legend_title="",
+                      legend=dict(
+        yanchor="top",
+        y=0.99,
+        xanchor="right",
+        x=0.99
+    ))
 
     fig.layout.template = "presentation"
     fig.show()
 
-    pio.write_image(fig, save_path+location.lower()+"_flasks"+".png", scale=1, width=1600, height=1000)
+    pio.write_image(fig, save_path+location.lower()+"_flasks"+".png", scale=1, width=1400, height=850)
 
     fig.write_html(save_path+location.lower()+"_flasks"+".html")

@@ -162,3 +162,4 @@ with pd.ExcelWriter(processed_data_path + city + "_hestia_co2_sector_totals.xlsx
 
         # Save year data to an excel sheet
         all_sector_data.to_excel(writer, sheet_name = year, index = False)
+
