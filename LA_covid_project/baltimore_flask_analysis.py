@@ -49,5 +49,7 @@ plot = fit_plot(df=flask_data,
                 x=flask_data["CO2ff"], x_err=flask_data["CO2ff_err"],
                 y=flask_data["COxs"],  y_err=flask_data["COxs_err"],
                 fit=fit, location=location,
-                save_path=plot_path)
+                save_path=plot_path,
+                marker_size = 15,
+                err_bar_size = 0.9)
 

@@ -107,7 +107,7 @@ def york_fit(xi, yi, dxi, dyi, ri=0.0, grad_0=1.0, maxIter=1e6):
               "maxIter = {:}".format(maxIter))
         return np.nan, np.nan, np.nan, np.nan
 
-def fit_plot(df, x, x_err, y, y_err, fit, location, save_path):
+def fit_plot(df, x, x_err, y, y_err, fit, location, save_path, marker_size, err_bar_size):
     """
 
     :param x:
@@ -132,11 +132,23 @@ def fit_plot(df, x, x_err, y, y_err, fit, location, save_path):
                                      xaxis_title="CO<sub>2</sub>ff (ppm)",
                                      title=location.capitalize() + " flasks")
 
-    fig.update_traces(marker={'size': 15})
+    fig.update_traces(marker={'size': marker_size})
 
-    #fig.data[0].error_y.thickness = 0.9
-    #fig.data[1].error_y.thickness = 0.9
-    #fig.data[2].error_y.thickness = 0.9
+    fig.data[0].error_y.thickness = err_bar_size
+    fig.data[1].error_y.thickness = err_bar_size
+    fig.data[2].error_y.thickness = err_bar_size
+    fig.data[3].error_y.thickness = err_bar_size
+    fig.data[4].error_y.thickness = err_bar_size
+    fig.data[5].error_y.thickness = err_bar_size
+    fig.data[6].error_y.thickness = err_bar_size
+    fig.data[0].error_x.thickness = err_bar_size
+    fig.data[1].error_x.thickness = err_bar_size
+    fig.data[2].error_x.thickness = err_bar_size
+    fig.data[3].error_x.thickness = err_bar_size
+    fig.data[4].error_x.thickness = err_bar_size
+    fig.data[5].error_x.thickness = err_bar_size
+    fig.data[6].error_x.thickness = err_bar_size
+
 
     fig.add_trace(
         go.Scatter(x=x, y=fit["grad"]*x + fit["int"], name="York fit", line_shape="linear"))
