@@ -106,6 +106,11 @@ for category in category_list:
 
 # Calculate relative abundances of each compound group
 
+for category in category_list:
+
+    for ramp_num in ramp_num_list:
+        ramp_data[category][ramp_num-1] = X/Y)
+
 # Plots up data
 
 # Saves data
