@@ -13,17 +13,17 @@ sample group, the script will plot up the relative abundances for each of the sa
 from tkinter import filedialog as fd
 import numpy as np
 import pandas as pd
-import plotly
 import plotly.express as px
 import plotly.io as pio
-import os
-import kaleido
-import imgkit
+import openpyxl
+
 
 # Read in data
-
-file_path = fd.askopenfilename()  # Why is this hidden?
+#
+# # file_path = fd.askopenfilename(title = "Select .xlsx file")  # Why is this hidden?
+file_path = "H:/data/GC-MS_script_project/GC-MS_output template.xlsx"
 # key_path = "H:/data/GC-MS_script_project/GC-MS_id_keys.xlsx"
+
 
 data = pd.read_excel(file_path, header=None)
 # key_data = pd.read_excel(key_path)
