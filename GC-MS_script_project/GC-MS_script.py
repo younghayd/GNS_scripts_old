@@ -6,29 +6,23 @@ GC-MS. Sebastian manually assigns each peak a corresponding compound name and th
 each peak has a retention time and an integration value. This is obtained for the sample over the full temperature
 range, and also over individual temperature ranges. The script will read this data in and group each sample into
 a sample category. By summing up the integrations of each category and then finding the relative abundance of each
-sample group, the script will plot up the relative abundances for each of the sample types and then save these plot.
+sample group, the script will plot up the relative abundances for each of the sample types and then save this plot in
+.html format.
 
 """
-# Import packages
+## Import packages ##
 from tkinter import filedialog as fd
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
-import openpyxl
 
 
-# Read in data
-#
-# # file_path = fd.askopenfilename(title = "Select .xlsx file")  # Why is this hidden?
-file_path = "H:/data/GC-MS_script_project/GC-MS_output template.xlsx"
-# key_path = "H:/data/GC-MS_script_project/GC-MS_id_keys.xlsx"
-
-
+## Read in data ##
+file_path = fd.askopenfilename(title = "Select .xlsx file")  # Why is this hidden?
 data = pd.read_excel(file_path, header=None)
-# key_data = pd.read_excel(key_path)
 
-# Acquire data parameters (number of temperature splits, list of temperature ranges, etc)
+## Acquire data parameters (number of temperature splits, list of temperature ranges, etc) ##
 # Number of ramps
 
 total_ramps = data.iloc[13][0]
@@ -54,7 +48,7 @@ for ramp_num in ramp_num_list:
 
 GCMS_data_full = data[22:][:]
 
-# Select relevant ramp data
+## Select relevant ramp data ##
 GCMS_data = pd.DataFrame({'category': GCMS_data_full[:][3],
                           'ramp_0': GCMS_data_full[:][1]})
 GCMS_data["category"] = GCMS_data["category"].fillna("unknown_source/origin")
@@ -65,12 +59,9 @@ for ramp_num in ramp_num_list:
 
 GCMS_data = GCMS_data.fillna(0)
 
-# Section here creating a new column next to the identification column called "category" where
+## Section here creating a new column next to the identification column called "category" where
 # everything is either terrestrial alkane, marine alkanes, cyclic alkane and alkyl benzene, thiophene, phenol, pyrrole,
-# PAHs, furan, or unknown. Maybe create a drop down menu for the identification so that it has to be one of X things.
-# Could also have an Excel spreadsheet that breaks down which identification goes into what category
-
-# Have a couple of if statements here which
+# PAHs, furan, or unknown. ##
 
 # Calculate integration sums for each category for each ramp
 category_list = ["terrestrial_alkanes", "marine_alkanes", "cyclic_alkanes_and_alkylbenzenes", "thiophenes",
@@ -78,25 +69,14 @@ category_list = ["terrestrial_alkanes", "marine_alkanes", "cyclic_alkanes_and_al
 
 
 ramp_data["terrestrial_alkanes_int"] = 0
-# ramp_data["terrestrial_alkanes_frac"] = 0
 ramp_data["marine_alkanes_int"] = 0
-# ramp_data["marine_alkanes_frac"] = 0
 ramp_data["cyclic_alkanes_and_alkylbenzenes_int"] = 0
-# ramp_data["cyclic_alkanes_and_alkylbenzenes_frac"] = 0
 ramp_data["thiophenes_int"] = 0
-# ramp_data["thiophenes_frac"] = 0
 ramp_data["phenols_int"] = 0
-# ramp_data["phenols_frac"] = 0
 ramp_data["pyrroles_int"] = 0
-# ramp_data["pyrroles_frac"] = 0
 ramp_data["PAH_int"] = 0
-# ramp_data["PAH_frac"] = 0
 ramp_data["furans_int"] = 0
-# ramp_data["furans_frac"] = 0
 ramp_data["unknown_source/origin_int"] = 0
-# ramp_data["unknown_source/origin_frac"] = 0
-
-# ramp_data = ramp_data.fillna(0)
 
 for category in category_list:
 
@@ -106,8 +86,6 @@ for category in category_list:
 
 ramp_data = ramp_data.T
 int_data = ramp_data.iloc[3:, :]
-
-# int_data.astype("int")
 
 frac_data = pd.DataFrame(index = ["terrestrial_alkanes_frac", "marine_alkanes_frac",
                               "cyclic_alkanes_and_alkylbenzenes_frac",
@@ -120,7 +98,7 @@ frac_data = frac_data.fillna(float(0))
 for ramp_num in ramp_num_list:
     frac_data.iloc[:, ramp_num-1] = int_data.iloc[:, ramp_num-1]/sum(int_data.iloc[:, ramp_num-1])
 
-# Organising data to be plotted up
+## Organising data to be plotted up ##
 plot_data = pd.DataFrame(np.array(np.meshgrid(ramp_num_list, category_list)).T.reshape(-1, 2))
 plot_data.loc[:, "frac"] = 0
 plot_data.columns = ["ramp_num", "category", "frac"]
@@ -135,44 +113,48 @@ for ramp_num in ramp_num_list: #Assigning frac values for each ramp and each com
 plot_data.loc[:, "frac"] = plot_data["frac"]*100
 
 
-#Plot data
+## Plot data ##
+# custom_colours = ['green', 'blue', 'yellow', 'orange', 'red', 'black','pink', 'purple', 'brown']
+#
+# # Define a custom color scale for categories
+# category_list = ["terrestrial_alkanes", "marine_alkanes", "cyclic_alkanes_and_alkylbenzenes", "thiophenes",
+#                  "phenols", "pyrroles", "PAH", "furans", "unknown_source/origin"]
+# category_colors = {
+#     "terrestrial_alkanes": "green",
+#     "marine_alkanes": "blue",
+#     "cyclic_alkanes_and_alkylbenzenes": "yellow",
+#     "thiophenes": "orange",
+#     "phenols": "red",
+#     "pyrroles": "brown",
+#     "PAH": "pink",
+#     "furans": "purple",
+#     "unknown_source/origin": "black"
+# }
+#
+# # Map the "category" column to colors using the custom color scale
+# plot_data["color"] = plot_data["category"].map(category_colors)
+
 pio.renderers.default = ""
 fig = px.bar(plot_data, x="ramp_num", y="frac", color="category", title="Ramp plot").update_layout(
                                  xaxis_title="Ramp Number",
                                  yaxis_title="Fraction (%)",
                                  title=title,
-                                 legend=dict(title = "Category"))
+                                 legend=dict(title="Category"))
 
-# fig = px.bar(df, x="day", y="total_bill", color="smoker", barmode="group", facet_col="sex",
-#              category_orders={"day": ["Thur", "Fri", "Sat", "Sun"],
-#                               "smoker": ["Yes", "No"],
-#                               "sex": ["Male", "Female"]})
 fig.update_xaxes(showline=True, linewidth=2, linecolor='black', mirror=True, zeroline=False)
 fig.update_yaxes(showline=True, linewidth=2, linecolor='black', mirror=True, zeroline=False)
+# fig.update_traces(marker_color = custom_colours)
 
 fig.update_layout(
     font_size=20,
-    title_x = 0.15,
-    width = 1200,
-    height = 800,
-    uniformtext_minsize = 14
+    title_x=0.15,
+    width=1200,
+    height=800,
+    uniformtext_minsize=14
 )
 # pio.renderers.default = "browser"
 # fig.show()
 
+## Saves data ##
 
-# Saves data
-# fig.to_image(format="png", engine="kaleido")
-# fig.to_image(format="png", engine="orca")
-# plotly.io.orca.config.save()
-# fig.write_image("title.png")
-# pio.write_image(fig, os.path.dirname(file_path)+"/"+title+".png", format = "png")
-# fig.write_image(os.path.dirname(file_path) + title+".png", engine='orca')
-# fig.write_html(os.path.dirname(file_path)+"/"+title+".html")
-
-fig.write_image("C:/Users/haydeny/Desktop/plot.png", format = "png")
-
-#
-# import pyimgkit
-#
-# pyimgkit.from_file(os.path.dirname(file_path)+"/"+title+".html", os.path.dirname(file_path)+"/"+'out.jpg')
+fig.write_html(os.path.dirname(file_path)+"/"+title+".html")
